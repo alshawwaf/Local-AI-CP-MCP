@@ -1,0 +1,425 @@
+###############################################################################
+# Multi-Service Stack
+# - n8n (workflow automation)
+# - PostgreSQL (n8n backend)
+# - Ollama (local LLMs) CPU/GPU
+# - Langflow (AI flow builder)
+# - Open-WebUI (AI chat interface)
+# - Flowise (LLM orchestration UI)
+# - Qdrant (vector database)
+###############################################################################
+
+###############################################################################
+# Networks
+###############################################################################
+networks:
+  demo:
+
+###############################################################################
+# Volumes
+###############################################################################
+volumes:
+  n8n_storage:
+  postgres_storage:
+  ollama_storage:
+  qdrant_storage:
+  open-webui:
+  flowise:
+  langflow:
+
+###############################################################################
+# Common Service Definitions (Anchors)
+###############################################################################
+
+# ──────────────── n8n Base ────────────────
+x-n8n: &service-n8n
+  image: n8nio/n8n:latest
+  networks: ["demo"]
+  environment:
+    - DB_TYPE=postgresdb
+    - DB_POSTGRESDB_HOST=postgres
+    - DB_POSTGRESDB_USER=${POSTGRES_USER}
+    - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+    - N8N_DIAGNOSTICS_ENABLED=false
+    - N8N_PERSONALIZATION_ENABLED=false
+    # IMPORTANT for container-to-container curl
+    - N8N_SECURE_COOKIE=false
+    - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    - N8N_USER_MANAGEMENT_JWT_SECRET=${N8N_USER_MANAGEMENT_JWT_SECRET}
+    # we will ALSO call /rest/owner/setup in the provisioner with these:
+    - N8N_USER_MANAGEMENT_EMAIL=${N8N_ADMIN_EMAIL}
+    - N8N_USER_MANAGEMENT_FIRST_NAME=${N8N_ADMIN_FIRST_NAME}
+    - N8N_USER_MANAGEMENT_LAST_NAME=${N8N_ADMIN_LAST_NAME}
+    - N8N_USER_MANAGEMENT_PASSWORD=${N8N_ADMIN_PASSWORD}
+    - N8N_USER_MANAGEMENT_DISABLED=false
+    # basic auth (MUST match provisioner)
+    - N8N_BASIC_AUTH_ACTIVE=true
+    - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+    - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+    # allow community packages
+    - N8N_COMMUNITY_PACKAGES_ENABLED=true
+    - N8N_UNVERIFIED_PACKAGES_ENABLED=true
+    - N8N_COMMUNITY_PACKAGES_ALLOW_TOOL_USAGE=true
+
+# ──────────────── Ollama Base ────────────────
+
+x-ollama: &service-ollama
+  image: ollama/ollama:latest
+  networks: ["demo"]
+  restart: unless-stopped
+  ports:
+    - "${OLLAMA_PORT}:11434"
+  volumes:
+    - ollama_storage:/root/.ollama
+  # ensure the daemon is actually ready before dependents run
+  healthcheck:
+    test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+    interval: 5s
+    timeout: 5s
+    retries: 20
+
+# ──────────────── Ollama Model Puller ────────────────
+x-init-ollama: &init-ollama
+  image: ollama/ollama:latest
+  networks: ['demo']
+  volumes:
+    - ollama_storage:/root/.ollama
+  entrypoint: /bin/sh
+  command:
+    - "-lc"
+    - |
+      set -e
+      echo "Waiting for Ollama @ $OLLAMA_HOST ..."
+      # loop until the server responds
+      until OLLAMA_HOST="$OLLAMA_HOST" ollama list >/dev/null 2>&1; do
+        echo "  Ollama not ready yet..."
+        sleep 3
+      done
+      echo "Ollama is ready. Pulling models…"
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull llama3.1:latest
+      # NOTE: change this to a real model in the Ollama library if needed
+      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull glm4:latest
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull nomic-embed-text:latest
+      echo "Models pulled successfully!!!"
+
+###############################################################################
+# Services
+###############################################################################
+services:
+
+  # ──────────────── PostgreSQL ────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - postgres_storage:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ──────────────── Ollama CPU/GPU ────────────────
+  ollama-cpu:
+    profiles: ["cpu"]
+    image: ollama/ollama:latest
+    container_name: ollama-cpu
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${OLLAMA_PORT}:11434"
+    volumes:
+      - ollama_storage:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama-cpu:11434
+    healthcheck:
+      # simple: check that the daemon responds
+      test: ["CMD-SHELL", "OLLAMA_HOST=http://127.0.0.1:11434 ollama list >/dev/null 2>&1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  ollama-gpu:
+    profiles: ["gpu-nvidia"]
+    <<: *service-ollama
+    container_name: ollama-gpu
+    environment:
+      - OLLAMA_HOST=http://ollama-gpu:11434
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # ──────────────── Ollama Model Pullers ────────────────
+  ollama-pull-llama-cpu:
+    profiles: ["cpu"]
+    image: ollama/ollama:latest
+    container_name: ollama-pull-llama-cpu
+    networks: ["demo"]
+    volumes:
+      - ollama_storage:/root/.ollama
+    environment:
+      - OLLAMA_HOST=http://ollama-cpu:11434
+    depends_on:
+      # let it start, the script will wait in a loop
+      - ollama-cpu
+    entrypoint: /bin/sh
+    command:
+      - -lc
+      - |
+        echo ">> Waiting for Ollama at $${OLLAMA_HOST} ..."
+        # loop until Ollama answers
+        until OLLAMA_HOST="$${OLLAMA_HOST}" ollama list >/dev/null 2>&1; do
+          echo "  ...still waiting for Ollama ($${OLLAMA_HOST})"
+          sleep 3
+        done
+        echo "Ollama is up. Pulling models..."
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull llama3.1:latest
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull nomic-embed-text:latest
+        echo "All models pulled!!!"
+        # keep the container alive so logs stay visible
+        tail -f /dev/null
+
+  ollama-pull-llama-gpu:
+    profiles: ["gpu-nvidia"]
+    <<: *init-ollama
+    container_name: ollama-pull-llama-gpu
+    environment:
+      - OLLAMA_HOST=http://ollama-gpu:11434
+    depends_on:
+      ollama-gpu:
+        condition: service_healthy
+
+  # ──────────────── n8n ────────────────
+  n8n:
+    <<: *service-n8n
+    container_name: n8n
+    build:
+      context: ./docker/n8n
+      dockerfile: Dockerfile
+    image: my-n8n:custom
+    restart: unless-stopped
+    ports:
+      - "${N8N_PORT}:5678"
+    volumes:
+      - n8n_storage:/home/node/.n8n
+      - ./n8n/backup:/backup
+      - ./shared:/data/shared
+      - ./n8n/custom-nodes:/home/node/.n8n/custom
+    depends_on:
+      - postgres
+
+  # ──────────────── n8n PROVISIONER (owner + login + MCP install) ────────────────
+  n8n-provision:
+    image: curlimages/curl:8.9.1
+    container_name: n8n-provision
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    volumes:
+      - ./scripts:/scripts:ro
+    environment:
+      # n8n from inside the network
+      - N8N_URL=http://n8n:5678
+      # owner info (must match what you want in n8n)
+      - N8N_ADMIN_EMAIL=${N8N_ADMIN_EMAIL}
+      - N8N_ADMIN_FIRST_NAME=${N8N_ADMIN_FIRST_NAME}
+      - N8N_ADMIN_LAST_NAME=${N8N_ADMIN_LAST_NAME}
+      - N8N_ADMIN_PASSWORD=${N8N_ADMIN_PASSWORD}
+      # package to install
+      - N8N_COMMUNITY_PACKAGE=n8n-nodes-mcp
+      # must match n8n basic auth above
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+    command: ["sh", "/scripts/n8n-provision.sh"]
+    restart: "no"
+
+  # ──────────────── n8n Import Utility ────────────────
+  n8n-import:
+    image: n8nio/n8n:latest
+    container_name: n8n-import
+    networks: ["demo"]
+    entrypoint: /bin/sh
+    command:
+      - "-c"
+      - |
+        echo "Waiting for Postgres..."
+        until nc -z -w 3 postgres 5432; do
+          echo "Postgres not ready, waiting..."
+          sleep 3
+        done
+
+        echo "Waiting for n8n..."
+        until nc -z -w 3 n8n 5678; do
+          echo "n8n not ready, waiting..."
+          sleep 5
+        done
+
+        echo "Waiting for n8n-provision (owner + MCP) ..."
+        # provisioner exits when done
+        sleep 3
+
+        echo "Importing n8n credentials & workflows..."
+        n8n import:credentials --separate --input=/backup/credentials && \
+        n8n import:workflow --separate --input=/backup/workflows
+
+        echo "Import completed!!!"
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
+      - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
+      - N8N_USER_MANAGEMENT_DISABLED=false
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PERSONALIZATION_ENABLED=false
+    volumes:
+      - ./n8n/backup:/backup
+      - ./n8n/custom-nodes:/home/node/.n8n/custom
+      - n8n_storage:/home/node/.n8n
+    depends_on:
+      - postgres
+      - n8n
+      - n8n-provision
+    restart: "no"
+
+  # ──────────────── Flowise ────────────────
+  flowise:
+    image: flowiseai/flowise
+    container_name: flowise
+    networks: ["demo"]
+    restart: unless-stopped
+    environment:
+      - PORT=${FLOWISE_PORT}
+    ports:
+      - "${FLOWISE_PORT}:${FLOWISE_PORT}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ~/.flowise:/root/.flowise
+    entrypoint: /bin/sh -c "sleep 5; flowise start"
+
+  # ──────────────── Open WebUI ────────────────
+  open-webui:
+    profiles: ["cpu"]
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${OPEN_WEBUI_PORT}:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - open-webui:/app/backend/data
+      - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
+
+    depends_on:
+      - ollama-pull-llama-cpu
+
+  # ──────────────── Qdrant ────────────────
+  qdrant:
+    image: qdrant/qdrant
+    container_name: qdrant
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${QDRANT_PORT}:6333"
+    volumes:
+      - qdrant_storage:/qdrant/storage
+      - ./quadrant/backup:/backup
+
+  # ──────────────── Langflow ────────────────
+  langflow:
+    profiles: ["cpu"]
+    image: langflowai/langflow:latest
+    container_name: langflow
+    networks: ["demo"]
+    restart: unless-stopped
+    ports:
+      - "${LANGFLOW_PORT}:7860"
+    volumes:
+      - ./langflow/flows:/app/flows
+    depends_on:
+      - ollama-pull-llama-cpu
+
+
+  # ─────────── Documentation MCP over HTTP ───────────
+
+  mcp-documentation:
+    image: my-n8n:custom
+    container_name: mcp-documentation
+    networks: ["demo"]
+    entrypoint: ["/usr/local/bin/mcp-documentation"]
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3000"
+      - "--client-id"
+      - "${DOC_CLIENT_ID}"
+      - "--secret-key"
+      - "${DOC_SECRET_KEY}"
+      - "--region"
+      - "${DOC_REGION}"
+
+    ports:
+      - "7300:3000"
+    restart: unless-stopped
+
+  mcp-https-inspection:
+    image: my-n8n:custom
+    container_name: mcp-https-inspection
+    networks: ["demo"]
+    entrypoint: ["/usr/local/bin/mcp-https-inspection"]
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3001"
+    ports:
+      - "7301:3001"
+    restart: unless-stopped
+
+  mcp-quantum-management:
+    image: my-n8n:custom
+    container_name: mcp-quantum-management
+    networks: ["demo"]
+    entrypoint: ["/usr/local/bin/mcp-quantum-management"]
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3002"
+    ports:
+      - "7302:3002"
+    restart: unless-stopped
+
+  mcp-management-logs:
+    image: my-n8n:custom
+    container_name: mcp-management-logs
+    networks: ["demo"]
+    entrypoint: ["/usr/local/bin/mcp-management-logs"]
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3003"
+    ports:
+      - "7303:3003"
+    restart: unless-stopped
