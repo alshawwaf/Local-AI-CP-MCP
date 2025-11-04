@@ -112,6 +112,13 @@ It’s safe to re-run: if owner exists, it skips.
 
 ## 5. Running (profiles)
 
+- Start by cloning this library:
+
+```bash
+ubuntu# git clone https://github.com/alshawwaf/Local-AI-CP-MCP.git
+
+```
+
 CPU stack:
 
 ```bash
