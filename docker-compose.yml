@@ -365,6 +365,8 @@ services:
     image: my-n8n:custom
     container_name: mcp-documentation
     networks: ["demo"]
+    depends_on:
+      - n8n
     entrypoint: ["/usr/local/bin/mcp-documentation"]
     command:
       - "--transport"
@@ -386,6 +388,8 @@ services:
     image: my-n8n:custom
     container_name: mcp-https-inspection
     networks: ["demo"]
+    depends_on:
+      - n8n
     entrypoint: ["/usr/local/bin/mcp-https-inspection"]
     command:
       - "--transport"
@@ -400,6 +404,8 @@ services:
     image: my-n8n:custom
     container_name: mcp-quantum-management
     networks: ["demo"]
+    depends_on:
+      - n8n
     entrypoint: ["/usr/local/bin/mcp-quantum-management"]
     command:
       - "--transport"
@@ -414,6 +420,8 @@ services:
     image: my-n8n:custom
     container_name: mcp-management-logs
     networks: ["demo"]
+    depends_on:
+      - n8n
     entrypoint: ["/usr/local/bin/mcp-management-logs"]
     command:
       - "--transport"
