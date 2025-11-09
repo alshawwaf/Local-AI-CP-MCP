@@ -1,0 +1,323 @@
+{
+  "name": "threat-prevention-mcp-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "455ff811-e11c-4025-91cd-da876e0989c0",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        48
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "82a996e8-3349-43db-9dab-a6750e49ef30",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -176
+      ],
+      "webhookId": "f9c04e85-08a8-405c-9835-5426c9b01420"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "options": {}
+      },
+      "id": "c68a4fca-b71f-43d4-945f-218af71a7b07",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -352,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -256,
+        128
+      ],
+      "id": "b44840be-66ff-4265-a3b9-a87cd05f5c43",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "do I have any protections with high performance impact enabled?",
+        "height": 80,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -896,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "11ae0166-6584-42b9-988f-b9ad249c086f",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        128
+      ],
+      "id": "d41e962d-e1b8-414a-ad39-57556ea0f43a",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        128
+      ],
+      "id": "c72196ec-0ec9-4018-b28b-bca96c87f67b",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 176,
+        "width": 624,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -736,
+        80
+      ],
+      "typeVersion": 1,
+      "id": "589efbf7-bfad-428e-b361-5ed561a2d6a6",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        192,
+        128
+      ],
+      "id": "a778b429-7be4-4a51-9474-2d1213e4ddd4",
+      "name": "List-CP-MCP-Tools-Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "Gj4u22sU4itcDFBo",
+          "name": "CP Threat Prevention MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        368,
+        128
+      ],
+      "id": "73dfdf11-651d-4db3-86c5-6e902a28d693",
+      "name": "Execute-CP-MCP-Tools-Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "Gj4u22sU4itcDFBo",
+          "name": "CP Threat Prevention MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-MCP-Tools-Client\" tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool \"Execute-CP-MCP-Tools-Client\".\n4. summarize the results."
+        }
+      },
+      "id": "2ce5826c-b2a0-4213-829f-426d1e49c4d4",
+      "name": "CP Threat Prevention AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        -176
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 192,
+        "width": 368,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        96
+      ],
+      "typeVersion": 1,
+      "id": "cff2e69f-a724-4d2d-962f-607656cdec51",
+      "name": "Sticky Note1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "List-CP-MCP-Tools-Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute-CP-MCP-Tools-Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP Threat Prevention AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "09da47cf-5231-4e81-99c5-49a66e0db238",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "7f3d5iikQDHeyJ5q",
+  "tags": []
+}

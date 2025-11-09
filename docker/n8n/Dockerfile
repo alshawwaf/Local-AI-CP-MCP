@@ -22,37 +22,59 @@ RUN set -eux; \
   mv "${MCP_TGZ}" /opt/artifacts/; \
   chown -R node:node /opt/artifacts
 
-# ---------- Install MCP CLIs under /opt (not masked by volumes) ----------
+# ---------- make target dir as root, then hand it to node ----------
 RUN mkdir -p /opt/mcp-doc && chown -R node:node /opt/mcp-doc
+
+# ---------- Install all MCP CLIs as node ----------
 USER node
 RUN set -eux; \
   cd /opt/mcp-doc; \
   npm init -y >/dev/null 2>&1; \
   MCP_TGZ="$(ls -1 /opt/artifacts/chkp-mcp-utils-*.tgz | head -n1)"; \
   npm i --omit=dev \
-    @chkp/documentation-mcp@0.1.4 \
-    @chkp/https-inspection-mcp@0.7.4 \
-    @chkp/quantum-management-mcp@0.8.0 \
-    @chkp/management-logs-mcp@0.6.4 \
-    @chkp/quantum-infra@latest \
+    @chkp/documentation-mcp@latest \
+    @chkp/https-inspection-mcp@latest \
+    @chkp/quantum-management-mcp@latest \
+    @chkp/management-logs-mcp@latest \
+    @chkp/threat-emulation-mcp@latest \
+    @chkp/threat-prevention-mcp@latest \
+    @chkp/spark-management-mcp@latest \
+    @chkp/reputation-service-mcp@latest \
+    @chkp/harmony-sase-mcp@latest \
+    @chkp/quantum-gw-cli-mcp@latest \
+    @chkp/quantum-gw-connection-analysis-mcp@latest \
+    @chkp/quantum-gaia-mcp@latest \
+    @chkp/cpinfo-analysis-mcp@latest \
     "file:${MCP_TGZ}"; \
+  # quick sanity check
   /opt/mcp-doc/node_modules/.bin/documentation-mcp --help >/dev/null
 
-# ---------- Wrappers (drop stray positional like "stdio" and exec) ----------
+# ---------- Create /usr/local/bin wrappers for ALL of them ----------
 USER root
-RUN wrap() { \
-  name="$1"; bin="$2"; \
-  printf '%s\n' \
-    '#!/bin/sh' \
-    'set -eu' \
-    'case "${1-}" in stdio|http|stdio:*|http:*) shift;; esac' \
-    "exec /opt/mcp-doc/node_modules/.bin/${bin} \"\$@\"" \
-    >"/usr/local/bin/${name}" && chmod +x "/usr/local/bin/${name}"; \
-}; \
+RUN set -eux; \
+  wrap() { \
+    name="$1"; bin="$2"; \
+    printf '%s\n' \
+      '#!/bin/sh' \
+      'set -eu' \
+      'case "${1-}" in stdio|http|stdio:*|http:*) shift;; esac' \
+      "exec /opt/mcp-doc/node_modules/.bin/${bin} \"\$@\"" \
+      >"/usr/local/bin/${name}"; \
+    chmod +x "/usr/local/bin/${name}"; \
+  }; \
   wrap mcp-documentation documentation-mcp; \
   wrap mcp-https-inspection https-inspection-mcp; \
   wrap mcp-quantum-management quantum-management-mcp; \
-  wrap mcp-management-logs management-logs-mcp
+  wrap mcp-management-logs management-logs-mcp; \
+  wrap threat-emulation-mcp threat-emulation-mcp; \
+  wrap threat-prevention-mcp threat-prevention-mcp; \
+  wrap spark-management-mcp spark-management-mcp; \
+  wrap reputation-service-mcp reputation-service-mcp; \
+  wrap harmony-sase-mcp harmony-sase-mcp; \
+  wrap quantum-gw-cli-mcp quantum-gw-cli-mcp; \
+  wrap quantum-gw-connection-analysis-mcp quantum-gw-connection-analysis-mcp; \
+  wrap quantum-gaia-mcp quantum-gaia-mcp; \
+  wrap cpinfo-analysis-mcp cpinfo-analysis-mcp
 
-# Runtime as node
+# ---------- back to node like the base image ----------
 USER node

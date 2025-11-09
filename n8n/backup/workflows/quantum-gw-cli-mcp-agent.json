@@ -1,0 +1,322 @@
+{
+  "name": "quantum-gw-cli-mcp-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5cc14d4d-ea4e-489f-adf9-fffb9dc3de57",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        32
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "493cf34a-dea8-46de-854d-b99ae4e3d926",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -544,
+        -176
+      ],
+      "webhookId": "7b1a963d-5338-4954-97bf-77f18643fdc3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "options": {}
+      },
+      "id": "1b1053d2-71c2-4bb3-8142-57f668e2627f",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        112
+      ],
+      "id": "2a7d8875-8b3d-4ed1-8206-8ee242e2a8b4",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "ec3e59b8-e845-4db0-8400-9762daa2ecb6",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        112
+      ],
+      "id": "86af3153-8f7f-40fd-9492-a06430b6b2a9",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        192,
+        80
+      ],
+      "id": "b30041fc-0c63-4d15-bb88-168fc48add8e",
+      "name": "List-CP-MCP-Tools-Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "io39bpeHtMHkxkm5",
+          "name": "Quantum GW CLI MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 192,
+        "width": 368,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "1c4a7440-0b38-42cd-bbe3-0847c00bea44",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 192,
+        "width": 528,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -672,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "e2454e3c-cf82-496e-a99b-871578400b8a",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "Create a toplogy schema for all interface configurations, IP routes and VLAN setups on \"GW\".",
+        "height": 96
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "5500369b-f2fe-4e32-875a-4f3ac4e94456",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-MCP-Tools-Client\" tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool \"Execute-CP-MCP-Tools-Client\".\n4. summarize the results."
+        }
+      },
+      "id": "2be85442-6db8-446b-9134-4826a1db3348",
+      "name": "Quantum GW CLI AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        -176
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        368,
+        80
+      ],
+      "id": "26baa60a-b440-4ad5-b27e-4ba6141c31b7",
+      "name": "Execute-CP-MCP-Tools-Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "io39bpeHtMHkxkm5",
+          "name": "Quantum GW CLI MCP Client Docker"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List-CP-MCP-Tools-Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Execute-CP-MCP-Tools-Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "7ff901d6-3942-41d2-a474-b2c496f59c99",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "ksH0PFmOUUF5twK1",
+  "tags": []
+}

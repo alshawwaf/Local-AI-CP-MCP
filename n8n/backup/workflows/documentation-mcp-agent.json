@@ -1,0 +1,323 @@
+{
+  "name": "documentation-mcp-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "34092447-8fc7-4d49-a803-61540bd08f66",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "6385dd5c-7887-4a23-8cc6-65167bbc4f96",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -560,
+        -176
+      ],
+      "webhookId": "6457b028-9b78-42c9-b3a7-2e43073c468e"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "options": {}
+      },
+      "id": "ab16d62c-7b89-4f8f-b1e2-2c471eabb01f",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        -176
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        112
+      ],
+      "id": "9fc4ec64-5eb8-4018-a0db-eff37326c775",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "what are the minimum requirements for R81.10?",
+        "height": 80,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "d93f239f-dd18-4e78-af5c-88e2e627cf51",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "e5d86f56-d3ac-4991-8851-d2cadbbfc20f",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        112
+      ],
+      "id": "e44435fc-39e4-4ddf-885b-ed7b7843b8fe",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        176,
+        80
+      ],
+      "id": "8e8dd659-a82d-43b3-b0d3-48a6edeb448a",
+      "name": "List-CP-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "iyj7WjSgVPXRQujw",
+          "name": "CP Documentation MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{  $fromAI('Tool_Name')  }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        336,
+        80
+      ],
+      "id": "cb404f3d-d08a-4276-b958-42c0d39b32c6",
+      "name": "Execute-CP-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "iyj7WjSgVPXRQujw",
+          "name": "CP Documentation MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results you receive from check point after triggering the CP-MCP-Client in the previous step."
+        }
+      },
+      "id": "e9e11a7e-3f0f-4452-9157-ab0d778efd85",
+      "name": "CP documentation AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        -176
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 176,
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -688,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "dacf96c0-0c9a-4e16-b9e8-b787f7c6731b",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 176,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        112,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "b78d09be-5663-4dba-8e49-3acaecd17411",
+      "name": "Sticky Note2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP documentation AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "CP documentation AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "List-CP-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP documentation AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute-CP-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP documentation AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP documentation AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "73587da7-9f5a-4b1d-87ad-5a62c8148439",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "8yjGg35H4LbRd9Gm",
+  "tags": []
+}

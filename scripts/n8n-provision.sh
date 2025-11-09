@@ -1,4 +1,8 @@
 #!/usr/bin/env sh
+# This script is used to provision the owner admin in n8n
+# It also installs the n8n-node-mcp community node
+# Author: Khalid Alshawwaf
+
 set -e
 
 N8N_URL="${N8N_URL:-http://n8n:5678}"
@@ -120,12 +124,30 @@ while :; do
   echo "→ PKG HTTP: ${PKG_STATUS}"
   echo "→ PKG BODY: ${PKG_BODY}"
 
+  # n8n sometimes still says "starting up"
   echo "${PKG_BODY}" | grep -q "n8n is starting up" && {
     [ "$pkg_tries" -ge 40 ] && { echo "giving up on package (still starting)"; exit 1; }
     echo "package: n8n still starting, wait 3s..."; sleep 3; continue; }
 
-  [ "$PKG_STATUS" = "200" ] && { echo "package installed"; exit 0; }
+  # normal success
+  if [ "$PKG_STATUS" = "200" ]; then
+    echo "package installed"
+    exit 0
+  fi
 
+  # tricky case: n8n says "already installed"
+  if [ "$PKG_STATUS" = "400" ] && echo "$PKG_BODY" | grep -qi "already installed"; then
+    echo "n8n says it's already installed → verifying..."
+    PKG_LIST=$(curl -s -b /tmp/cookies.txt -u "${BASIC_USER}:${BASIC_PASS}" "${N8N_URL}/rest/community-packages" || true)
+    echo "$PKG_LIST" | grep -q "\"name\":\"${PKG}\"" && {
+      echo "verified: ${PKG} is actually installed"
+      exit 0
+    }
+    echo "n8n claimed '${PKG}' is installed but it’s not in list → will retry"
+    # fall through to retry below
+  fi
+
+  # auth issue stays as fatal
   if [ "$PKG_STATUS" = "401" ]; then
     echo "   401 from /rest/community-packages (cookie+basic rejected)"
     echo "   → probably existing n8n_storage has a different owner"
@@ -133,6 +155,6 @@ while :; do
     exit 1
   fi
 
-  [ "$pkg_tries" -ge 40 ] && { echo "package not installed after 40 tries"; exit 1; }
+  [ "$pkg_tries" -ge 20 ] && { echo "package not installed after 20 tries"; exit 1; }
   echo "package install failed with ${PKG_STATUS}, retry 3s..."; sleep 3
 done

@@ -1,0 +1,328 @@
+{
+  "name": "https-inspection-mcp-OpenAI",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "47865538-2620-4608-86fd-d0697aa855f3",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        736,
+        192
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "9e279237-c20f-4495-a2a3-c2d0271483ff",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        192,
+        -16
+      ],
+      "webhookId": "df6e86fa-f71a-4dce-bf1f-86b8b8a01a49"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e3528d03-2108-4fd2-b216-a8a1df9c14b3",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        416,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini-2024-07-18"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        496,
+        272
+      ],
+      "id": "73aa8e04-0952-4593-bc7d-4081dd052f43",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "What are the HTTPS inspection rules I have in the \"Default Outbound Layer\" and \"Standard\" package?",
+        "height": 80,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -160,
+        0
+      ],
+      "typeVersion": 1,
+      "id": "42c22d2d-c7c7-49f7-8ac6-e14b01772658",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List-CP-HTTPS-Inspection-MCP-Tools\". Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name and proper parameters from step 1 in the tool \"Execute-CP-HTTPS-Inspection-MCP-Tools\".\n4. summarize the results"
+        }
+      },
+      "id": "f0147e8a-ec3f-4ff4-9946-1576d6c8a4e7",
+      "name": "CP-HTTPS-Inspection-MCP-AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        736,
+        -16
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        336,
+        272
+      ],
+      "id": "e0238b99-b4d8-48dd-ba69-b870c5d1d009",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        176,
+        272
+      ],
+      "id": "6c906f5a-d7df-40aa-8be3-9a63f4a95d10",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 176,
+        "width": 352,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        896,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "ef25ca73-cd7a-462d-b705-c29d5c4b10fb",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 176,
+        "width": 592,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        48,
+        224
+      ],
+      "typeVersion": 1,
+      "id": "135fc055-f972-41ca-a11c-acedfd0b3e41",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        944,
+        240
+      ],
+      "id": "2273849a-ed10-45e9-b7cc-ff53ecde8487",
+      "name": "List-CP-HTTPS-Inspection-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "3nFIXgMyX8Y7jIYZ",
+          "name": "CP HTTPS Inspection MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        240
+      ],
+      "id": "c3b8a57c-8aec-4ec4-a4f8-91d90bbe5a74",
+      "name": "Execute-CP-HTTPS-Inspection-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "3nFIXgMyX8Y7jIYZ",
+          "name": "CP HTTPS Inspection MCP Client Docker"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP-HTTPS-Inspection-MCP-AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "CP-HTTPS-Inspection-MCP-AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP-HTTPS-Inspection-MCP-AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CP-HTTPS-Inspection-MCP-AI Agent": {
+      "main": [
+        [],
+        []
+      ]
+    },
+    "List-CP-HTTPS-Inspection-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP-HTTPS-Inspection-MCP-AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Execute-CP-HTTPS-Inspection-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP-HTTPS-Inspection-MCP-AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2411cd18-ba00-4239-b408-81b3bb355a8e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "CHDPSOVhu4F2ufLO",
+  "tags": []
+}

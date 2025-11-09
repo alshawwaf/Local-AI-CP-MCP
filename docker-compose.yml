@@ -96,9 +96,9 @@ x-init-ollama: &init-ollama
         sleep 3
       done
       echo "Ollama is ready. Pulling models…"
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull llama3.1:latest
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull mistral-nemo:latest
       # NOTE: change this to a real model in the Ollama library if needed
-      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull glm4:latest
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull gpt-oss:20b-cloud
       OLLAMA_HOST="$OLLAMA_HOST" ollama pull nomic-embed-text:latest
       echo "Models pulled successfully!!!"
 
@@ -208,14 +208,14 @@ services:
     build:
       context: ./docker/n8n
       dockerfile: Dockerfile
-    image: my-n8n:custom
+    image: custom-mcp-n8n:custom
     restart: unless-stopped
     ports:
       - "${N8N_PORT}:5678"
     volumes:
       - n8n_storage:/home/node/.n8n
       - ./n8n/backup:/backup
-      - ./shared:/data/shared
+      - ./n8n/shared:/data/shared
       - ./n8n/custom-nodes:/home/node/.n8n/custom
     depends_on:
       - postgres
@@ -358,39 +358,38 @@ services:
     depends_on:
       - ollama-pull-llama-cpu
 
-
   # ─────────── Documentation MCP over HTTP ───────────
-
   mcp-documentation:
-    image: my-n8n:custom
+    image: custom-mcp-n8n:custom
     container_name: mcp-documentation
     networks: ["demo"]
     depends_on:
       - n8n
     entrypoint: ["/usr/local/bin/mcp-documentation"]
+    environment:
+      - CLIENT_ID=${DOC_CLIENT_ID}
+      - SECRET_KEY=${DOC_SECRET_KEY}
+      - REGION=${DOC_REGION}
     command:
       - "--transport"
       - "http"
       - "--transport-port"
       - "3000"
-      - "--client-id"
-      - "${DOC_CLIENT_ID}"
-      - "--secret-key"
-      - "${DOC_SECRET_KEY}"
-      - "--region"
-      - "${DOC_REGION}"
 
     ports:
       - "7300:3000"
     restart: unless-stopped
 
   mcp-https-inspection:
-    image: my-n8n:custom
+    image: custom-mcp-n8n:custom
     container_name: mcp-https-inspection
     networks: ["demo"]
     depends_on:
       - n8n
     entrypoint: ["/usr/local/bin/mcp-https-inspection"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -401,12 +400,15 @@ services:
     restart: unless-stopped
 
   mcp-quantum-management:
-    image: my-n8n:custom
+    image: custom-mcp-n8n:custom
     container_name: mcp-quantum-management
     networks: ["demo"]
     depends_on:
       - n8n
     entrypoint: ["/usr/local/bin/mcp-quantum-management"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -417,12 +419,15 @@ services:
     restart: unless-stopped
 
   mcp-management-logs:
-    image: my-n8n:custom
+    image: custom-mcp-n8n:custom
     container_name: mcp-management-logs
     networks: ["demo"]
     depends_on:
       - n8n
     entrypoint: ["/usr/local/bin/mcp-management-logs"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
     command:
       - "--transport"
       - "http"
@@ -430,4 +435,177 @@ services:
       - "3003"
     ports:
       - "7303:3003"
+    restart: unless-stopped
+
+  threat-emulation-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: threat-emulation-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/threat-emulation-mcp"]
+    environment:
+      - API_KEY=${TE_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3004"
+    ports:
+      - "7304:3004"
+    restart: unless-stopped
+
+  threat-prevention-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: threat-prevention-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/threat-prevention-mcp"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3005"
+    ports:
+      - "7305:3005"
+    restart: unless-stopped
+
+  spark-management-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: spark-management-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/spark-management-mcp"]
+    environment:
+      - CLIENT_ID=${SPARK_MGMT_CLIENT_ID}
+      - SECRET_KEY=${SPARK_MGMT_SECRET_KEY}
+      - REGION=${SPARK_MGMT_REGION}
+      - INFINITY_PORTAL_URL=${SPARK_MGMT_INFINITY_PORTAL_URL}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3006"
+    ports:
+      - "7306:3006"
+    restart: unless-stopped
+
+  reputation-service-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: reputation-service-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/reputation-service-mcp"]
+    environment:
+      - API_KEY=${REPUTATION_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3007"
+    ports:
+      - "7307:3007"
+    restart: unless-stopped
+
+  harmony-sase-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: harmony-sase-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/harmony-sase-mcp"]
+    environment:
+      - API_KEY=${HARMONY_SASE_API_KEY}
+      - MANAGEMENT_HOST=${HARMONY_SASE_MANAGEMENT_HOST}
+      - REGION=${HARMONY_SASE_REGION}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3008"
+    ports:
+      - "7308:3008"
+    restart: unless-stopped
+
+  quantum-gw-cli-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: quantum-gw-cli-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/quantum-gw-cli-mcp"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3009"
+    ports:
+      - "7309:3009"
+    restart: unless-stopped
+
+  quantum-gw-connection-analysis-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: quantum-gw-connection-analysis-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/quantum-gw-connection-analysis-mcp"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3010"
+    ports:
+      - "7310:3010"
+    restart: unless-stopped
+
+  quantum-gaia-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: quantum-gaia-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/quantum-gaia-mcp"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3011"
+    ports:
+      - "7311:3011"
+    restart: unless-stopped
+
+  cpinfo-analysis-mcp:
+    image: custom-mcp-n8n:custom
+    container_name: cpinfo-analysis-mcp
+    networks: ["demo"]
+    depends_on:
+      - n8n
+    entrypoint: ["/usr/local/bin/cpinfo-analysis-mcp"]
+    environment:
+      - MANAGEMENT_HOST=${MANAGEMENT_HOST}
+      - API_KEY=${SMS_API_KEY}
+      - LOG_LEVEL=${CPINFO_LOG_LEVEL}
+    command:
+      - "--transport"
+      - "http"
+      - "--transport-port"
+      - "3012"
+    ports:
+      - "7312:3012"
     restart: unless-stopped

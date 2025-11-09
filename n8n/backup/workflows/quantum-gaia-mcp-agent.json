@@ -1,0 +1,323 @@
+{
+  "name": "quantum-gaia-mcp-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e5046cad-3a1f-4e9b-91c6-20cc478221ae",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        96
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "de9808ff-877f-477d-b25b-529465659331",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -608,
+        -144
+      ],
+      "webhookId": "414009d6-7ae2-471c-9f11-f3590bc2e024"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "options": {}
+      },
+      "id": "7da183db-f8d4-45dd-9914-460ca1b49317",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "content": "show me all the interfaces on 10.1.1.111",
+        "height": 80,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -912,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "bd49fff5-615c-46c2-b6cb-fe6a677b3184",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "CUSTOM.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        192,
+        80
+      ],
+      "id": "bc8b08b8-3b7f-41a2-86cc-ef23a7adab72",
+      "name": "List CP MCP Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "E2KEIsNznFcetHLU",
+          "name": "CP Gaia MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "CUSTOM.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        352,
+        80
+      ],
+      "id": "9bc77bfa-1624-4815-bbd8-f0069a64136e",
+      "name": "Execute CP MCP Client",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "E2KEIsNznFcetHLU",
+          "name": "CP Gaia MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -448,
+        96
+      ],
+      "id": "e210042b-e914-461e-961e-c440ab723d2f",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -608,
+        96
+      ],
+      "id": "7d6f2424-d32d-4303-86d5-bc26891eba67",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 176,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "a6a1ee2b-50ce-433a-b4ca-b9298b9d3402",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 176,
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -720,
+        48
+      ],
+      "typeVersion": 1,
+      "id": "260a597a-3035-4105-927f-21bf7136f480",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"List CP MCP Client\" tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available 'Tool_Name' and parameters to by calling \"Execute CP MCP Client\".\n4. summarize the results."
+        }
+      },
+      "id": "2c72a9e5-969c-431d-936e-acd2b3a88d95",
+      "name": "CP Gaia AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        -144
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        96
+      ],
+      "id": "b25feb79-7c7c-4f7c-8533-dce34cafb4de",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List CP MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute CP MCP Client": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP Gaia AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8106a8ab-e4fc-4cde-bfe9-d1e1b17a64ae",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "GIibydxIfbki3xbJ",
+  "tags": []
+}

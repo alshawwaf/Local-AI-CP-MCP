@@ -13,7 +13,7 @@ import requests
 class Pipe:
     class Valves(BaseModel):
         n8n_url: str = Field(
-            default="http://n8n:5678/webhook/your-webhook-path",
+            default="http://n8n:5678/webhook/n8n",
             description="Internal n8n URL on the Docker network",
         )
         n8n_bearer_token: str = Field(default="changeme")
