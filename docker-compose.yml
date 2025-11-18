@@ -96,11 +96,14 @@ x-init-ollama: &init-ollama
         sleep 3
       done
       echo "Ollama is ready. Pulling models…"
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull mistral-nemo:latest
+      # OLLAMA_HOST="$OLLAMA_HOST" ollama pull mistral-nemo:latest
       # NOTE: change this to a real model in the Ollama library if needed
       OLLAMA_HOST="$OLLAMA_HOST" ollama pull gpt-oss:20b-cloud
-      OLLAMA_HOST="$OLLAMA_HOST" ollama pull nomic-embed-text:latest
-      echo "Models pulled successfully!!!"
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull kimi-k2-thinking:cloud
+      OLLAMA_HOST="$OLLAMA_HOST" ollama pull minimax-m2:cloud
+      echo "LLM Models pulled successfully!!!"
+      echo "Cloud LLMs require Ollama signin to link this environment o your account for billing (free @Nov20209)"
+      ollama signin
 
 ###############################################################################
 # Services
@@ -162,10 +165,10 @@ services:
               capabilities: [gpu]
 
   # ──────────────── Ollama Model Pullers ────────────────
-  ollama-pull-llama-cpu:
+  ollama-pull-models-cpu:
     profiles: ["cpu"]
     image: ollama/ollama:latest
-    container_name: ollama-pull-llama-cpu
+    container_name: ollama-pull-models-cpu
     networks: ["demo"]
     volumes:
       - ollama_storage:/root/.ollama
@@ -185,16 +188,16 @@ services:
           sleep 3
         done
         echo "Ollama is up. Pulling models..."
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull llama3.1:latest
-        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull nomic-embed-text:latest
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull gpt-oss:20b-cloud
+        OLLAMA_HOST="$${OLLAMA_HOST}" ollama pull mistral-nemo:latest
         echo "All models pulled!!!"
         # keep the container alive so logs stay visible
         tail -f /dev/null
 
-  ollama-pull-llama-gpu:
+  ollama-pull-models-gpu:
     profiles: ["gpu-nvidia"]
     <<: *init-ollama
-    container_name: ollama-pull-llama-gpu
+    container_name: ollama-pull-models-gpu
     environment:
       - OLLAMA_HOST=http://ollama-gpu:11434
     depends_on:
@@ -266,15 +269,12 @@ services:
           sleep 5
         done
 
-        echo "Waiting for n8n-provision (owner + MCP) ..."
-        # provisioner exits when done
-        sleep 3
-
         echo "Importing n8n credentials & workflows..."
         n8n import:credentials --separate --input=/backup/credentials && \
         n8n import:workflow --separate --input=/backup/workflows
 
-        echo "Import completed!!!"
+        echo "N8N Import completed!!!"
+
     environment:
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=postgres
@@ -286,16 +286,17 @@ services:
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
       - N8N_USER_MANAGEMENT_DISABLED=false
-      - N8N_DIAGNOSTICS_ENABLED=false
-      - N8N_PERSONALIZATION_ENABLED=false
     volumes:
       - ./n8n/backup:/backup
       - ./n8n/custom-nodes:/home/node/.n8n/custom
       - n8n_storage:/home/node/.n8n
     depends_on:
-      - postgres
-      - n8n
-      - n8n-provision
+      postgres:
+        condition: service_started
+      n8n:
+        condition: service_started
+      n8n-provision:
+        condition: service_completed_successfully
     restart: "no"
 
   # ──────────────── Flowise ────────────────
@@ -330,7 +331,7 @@ services:
       - ./open-webui/pipes/n8n_pipe.py:/app/backend/data/pipes/n8n_pipe.py:ro
 
     depends_on:
-      - ollama-pull-llama-cpu
+      - ollama-pull-models-cpu
 
   # ──────────────── Qdrant ────────────────
   qdrant:
@@ -356,7 +357,7 @@ services:
     volumes:
       - ./langflow/flows:/app/flows
     depends_on:
-      - ollama-pull-llama-cpu
+      - ollama-pull-models-cpu
 
   # ─────────── Documentation MCP over HTTP ───────────
   mcp-documentation:
@@ -441,6 +442,8 @@ services:
     image: custom-mcp-n8n:custom
     container_name: threat-emulation-mcp
     networks: ["demo"]
+    volumes:
+      - ./n8n/shared:/data/shared
     depends_on:
       - n8n
     entrypoint: ["/usr/local/bin/threat-emulation-mcp"]
@@ -608,4 +611,6 @@ services:
       - "3012"
     ports:
       - "7312:3012"
+    volumes:
+      - ./n8n/shared:/data/cpinfo
     restart: unless-stopped

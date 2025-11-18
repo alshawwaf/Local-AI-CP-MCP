@@ -1,63 +1,176 @@
-# Local AI + Check Point MCP Servers
+# Check Point MCP Servers Starting Kit
 
-A production-ready, multi-service Docker Compose stack that brings up:
 
-- **n8n** (workflow automation)
-- **PostgreSQL** (n8n backend)
-- **Auto-provisioner** (creates the n8n owner **and** installs `n8n-nodes-mcp`)
-- **Ollama** (local LLMs; CPU **or** NVIDIA GPU; auto model pull)
-- **Open WebUI** (chat UI)
-- **Langflow** (flow builder)
-- **Flowise** (LLM orchestration UI)
-- **Qdrant** (vector DB)
-- **Check Point MCP servers** (run as sidecars over HTTP on the Docker network)
 
-After `docker compose up -d` you should have:
+<p align="left">
+  <img src="https://img.shields.io/badge/Docker-Compose-blue?logo=docker" />
+  <img src="https://img.shields.io/badge/n8n-Automation-orange?logo=n8n" />
+  <img src="https://img.shields.io/badge/langflow-Workflow-green?logo=langflow" />
+  <img src="https://img.shields.io/badge/Ollama-LLM-grey" />
+  <img src="https://img.shields.io/badge/Check%20Point-MCP-magenta?" />
+</p>
 
-1) **n8n** running  
-2) an instance **owner** created  
-3) login via the credentials in `.env`  
-4) `n8n-nodes-mcp` installed (idempotent)  
-5) (if enabled) MCP sidecars listening over **HTTP** inside the Docker network
+> **Check Point MCP Servers Lab in One Command**
+>
+> Bring up n8n + Ollama + Flow UIs + Qdrant + a full fleet of Check Point MCP servers with:
+>
+> ```bash
+> docker compose --profile cpu up -d
+> ```
+---
+
+## 🔎 Quick Overview
+
+A **production-ready, multi-service Docker Compose stack** that brings up a full local AI + Check Point MCP (Model Context Protocol) environment:
+
+- **n8n** – workflow automation + MCP tools orchestrator
+- **PostgreSQL** – n8n backend database
+- **Auto-provisioner** – creates the n8n instance owner **and** installs `n8n-nodes-mcp`
+- **Ollama** – local LLMs; CPU **or** NVIDIA GPU; auto model pull
+- **Open WebUI** – chat UI for Ollama / LLMs
+- **Langflow** – visual AI flow builder
+- **Flowise** – LLM orchestration UI
+- **Qdrant** – vector database for embeddings
+- **Check Point MCP servers** – dedicated HTTP sidecars on the Docker network
+
+The goal is a **single lab stack** for building, testing, and demoing AI + Check Point workflows:
+
+- Instance owner is **auto-configured**
+- `n8n-nodes-mcp` is **pre-installed**
+- MCP servers are reachable as **HTTP tools** from inside n8n
 
 ---
 
-## 1) Repository layout
+## Navigation
 
+- [ Quick Start](#-quick-start)
+- [ Tech Stack & Layout](#-tech-stack--layout)
+- [ Environment--env](#%EF%B8%8F-environment-env)
+- [ Build & Profiles](#%EF%B8%8F-build--profiles)
+- [ n8n Provision & Auto-Import](#-n8n-provision--auto-import)
+- [ URLs & MCP Endpoints](#-urls--mcp-endpoints)
+- [ Ollama Models](#-ollama-models)
+- [ Data & Persistence](#-data--persistence)
+- [ Troubleshooting](#-troubleshooting)
+- [ Updating & Resetting](#%EF%B8%8F-updating--resetting)
+
+---
+
+## Quick Start
+
+<details>
+<summary><strong>1. Requirements</strong></summary>
+
+- **Docker Engine** + **Docker Compose v2**
+- Free ports from `.env` (e.g. `5678`, `5432`, `3000`, `3001`, `7860`, `6333`, `11434`, `73xx`, …)
+- Outbound Internet access from containers (for:
+  - Pulling images
+  - Installing community nodes
+  - Pulling Ollama models)
+- All commands executed from the folder containing `docker-compose.yml` and `.env`
+
+**Optional – GPU Profile**
+
+- NVIDIA GPU on the host
+- **NVIDIA Container Toolkit** installed
+- `nvidia-smi` works on the host
+
+</details>
+
+<details>
+<summary><strong>2. Minimal Happy Path</strong></summary>
+
+1. Create a `.env` file (see [Environment](#%EF%B8%8F-environment-env)).  
+2. Build the custom n8n image:
+
+   ```bash
+   docker compose build n8n
+   ```
+
+3. Start the CPU stack:
+
+   ```bash
+   docker compose --profile cpu up -d
+   ```
+
+4. Wait 30–60 seconds for:
+   - Postgres
+   - n8n
+   - Provisioner (owner + `n8n-nodes-mcp`)
+   - Optional `n8n-import` (workflows/credentials)
+
+5. Browse to **n8n**:
+
+   - <http://localhost:5678>  
+   - Log in with the owner credentials from `.env`
+
+</details>
+
+<details>
+<summary><strong>3. GPU Profile</strong></summary>
+
+If you want Ollama to use GPU instead of CPU:
+
+```bash
+# Start GPU profile
+docker compose --profile gpu-nvidia up -d
+
+# Or CPU + GPU together
+docker compose --profile cpu --profile gpu-nvidia up -d
 ```
+
+To avoid repeating profiles each time:
+
+```bash
+export COMPOSE_PROFILES=cpu
+docker compose up -d
+```
+
+</details>
+
+---
+
+## 📦 Tech Stack & Layout
+
+### Stack Summary
+
+| Component      | Purpose                                      |
+|----------------|----------------------------------------------|
+| n8n            | Automation engine + MCP orchestrator         |
+| PostgreSQL     | n8n backend DB                               |
+| n8n-provision  | Owner creation + `n8n-nodes-mcp` installation|
+| n8n-import     | Optional workflow & credential auto-import   |
+| Ollama         | Local LLM server (CPU / GPU)                 |
+| Open WebUI     | Chat UI for Ollama                           |
+| Flowise        | LLM orchestration / low-code builder         |
+| Langflow       | Visual AI flow builder                       |
+| Qdrant         | Vector database                              |
+| MCP sidecars   | Check Point MCP tools as HTTP servers        |
+
+### Repository Layout
+
+```bash
 .
-├─ docker-compose.yml           # multi-service stack (CPU/GPU profiles)
-├─ .env                         # passwords / ports / admin values
+├─ docker-compose.yml           # Multi-service stack (CPU / GPU profiles)
+├─ .env                         # Passwords / ports / admin values
 ├─ docker/
 │  └─ n8n/
-│     └─ Dockerfile             # custom n8n image (bakes in MCP CLIs + wrappers)
+│     └─ Dockerfile             # Custom n8n image (MCP CLIs + wrappers baked in)
 ├─ scripts/
-│  └─ n8n-provision.sh          # sidecar: owner + login + install community package
+│  └─ n8n-provision.sh          # Sidecar: owner setup + login + community node install
 ├─ n8n/
-│  ├─ backup/                   # workflows/credentials to auto-import (optional)
-│  └─ custom-nodes/             # extra n8n nodes (persisted)
+│  ├─ backup/                   # Workflows/credentials to auto-import (optional)
+│  └─ custom-nodes/             # Extra n8n nodes (persisted)
 ├─ langflow/
-│  └─ flows/                    # example Langflow flows
-└─ qdrant/                      # local backup for qdrant
+│  └─ flows/                    # Example Langflow flows
+└─ qdrant/                      # Local backup / collections for Qdrant
 ```
 
 ---
 
-## 2) Prerequisites
+## ⚙️ Environment (`.env`)
 
-- Docker Engine + Docker Compose v2
-- Free ports from `.env` (5678, 5432, 3000, 3001, 7860, 6333, 11434 …)
-- Internet access from containers (provisioner installs community package)
-- Run commands from the directory that has `docker-compose.yml` **and** `.env`
-
-**GPU (optional)**  
-If you plan to use the GPU profile, install **NVIDIA Container Toolkit** and ensure `nvidia-smi` works on the host.
-
----
-
-## 3) Environment (`.env`)
-
-Create `.env` next to `docker-compose.yml`:
+Create a `.env` next to `docker-compose.yml`:
 
 ```env
 # ───────── n8n DB ─────────
@@ -114,42 +227,42 @@ HARMONY_SASE_REGION=
 CPINFO_LOG_LEVEL=info
 ```
 
-Notes:
-
-- `N8N_ADMIN_*` is used by the provisioner to call `/rest/owner/setup`.
-- `N8N_BASIC_AUTH_*` must match what the provisioner uses.
-- Only fill MCP variables for services you plan to run; otherwise comment those services in the compose.
+> 💡 **Tip**  
+> - `N8N_ADMIN_*` is used by the provisioner to call `/rest/owner/setup`.  
+> - `N8N_BASIC_AUTH_*` must match what the provisioner uses to authenticate.  
+> - Only populate the MCP variables for the services you actually use (or comment out those services in `docker-compose.yml`).
 
 ---
 
-## 4) Build (custom image with MCP wrappers)
+## Build & Profiles
 
-The sidecars (e.g., `mcp-documentation`) are launched from the same custom image as `n8n`.  
-**Build once** before bringing the stack up:
+### Build the Custom n8n Image
+
+The Check Point MCP sidecars reuse a **custom n8n base image** with MCP CLIs and wrappers baked in.
 
 ```bash
 docker compose build n8n
 ```
 
-This builds `custom-mcp-n8n:custom` from `docker/n8n/Dockerfile` and bakes in all Check Point MCP CLIs **plus** `/usr/local/bin/*` wrappers for:
+This produces an image (e.g. `custom-mcp-n8n:custom`) which includes:
 
-- `mcp-documentation`
-- `mcp-https-inspection`
-- `mcp-quantum-management`
-- `mcp-management-logs`
-- `threat-emulation-mcp`
-- `threat-prevention-mcp`
-- `spark-management-mcp`
-- `reputation-service-mcp`
-- `harmony-sase-mcp`
-- `quantum-gw-cli-mcp`
-- `quantum-gw-connection-analysis-mcp`
-- `quantum-gaia-mcp`
-- `cpinfo-analysis-mcp`
+- All relevant `@chkp/*` MCP CLI packages
+- Wrapper scripts in `/usr/local/bin` for each MCP service:
+  - `mcp-documentation`
+  - `mcp-https-inspection`
+  - `mcp-quantum-management`
+  - `mcp-management-logs`
+  - `threat-emulation-mcp`
+  - `threat-prevention-mcp`
+  - `spark-management-mcp`
+  - `reputation-service-mcp`
+  - `harmony-sase-mcp`
+  - `quantum-gw-cli-mcp`
+  - `quantum-gw-connection-analysis-mcp`
+  - `quantum-gaia-mcp`
+  - `cpinfo-analysis-mcp`
 
----
-
-## 5) Run (profiles)
+### Start the Stack
 
 **CPU stack:**
 
@@ -169,65 +282,63 @@ docker compose --profile gpu-nvidia up -d
 docker compose --profile cpu --profile gpu-nvidia up -d
 ```
 
-Tip: set a default profile for the session:
+Set a default profile:
 
 ```bash
 export COMPOSE_PROFILES=cpu
+docker compose up -d
 ```
 
 ---
 
-## 6) Provisioner (`n8n-provision`)
+## n8n Provision & Auto-Import
 
-Runs **once** and:
+### Provisioner (`n8n-provision`)
 
-1. waits for `http://n8n:5678/healthz`
-2. creates owner via `/rest/owner/setup` (from `.env`)
-3. logs in
-4. installs `n8n-nodes-mcp` (idempotent; a 400 “already installed” is OK)
-5. exits
+The `n8n-provision` sidecar runs **once** and performs:
 
-Safe to re-run; if the owner exists, it skips.
+1. Wait for `http://n8n:5678/healthz`
+2. Create the owner via `/rest/owner/setup` (using `N8N_ADMIN_*`)
+3. Login using `N8N_BASIC_AUTH_*` and owner credentials
+4. Install `n8n-nodes-mcp` (idempotent – HTTP 400 “already installed” is fine)
+5. Exit
 
----
+Safe to re-run; it will **skip** already-completed steps.
 
-## 7) Auto-import (optional)
+### Auto-Import (`n8n-import`)
 
 If you place exported assets in:
 
 - `./n8n/backup/credentials`
 - `./n8n/backup/workflows`
 
-the `n8n-import` container will wait for Postgres + n8n + provision, then run:
+the `n8n-import` container will, after everything is healthy:
 
 ```bash
 n8n import:credentials --separate --input=/backup/credentials
 n8n import:workflow    --separate --input=/backup/workflows
 ```
 
-Leave these folders empty to skip.
+Leave these folders empty to skip auto-import.
 
 ---
 
-## 8) URLs
+## URLs & MCP Endpoints
 
-- **n8n** → http://localhost:5678  
-- **Open WebUI** → http://localhost:3000  
-- **Flowise** → http://localhost:3001  
-- **Langflow** → http://localhost:7860  
-- **Qdrant** → http://localhost:6333  
-- **Ollama** (API) → http://localhost:11434
+### Main Web UIs
 
----
+| Service      | URL                         |
+|--------------|-----------------------------|
+| n8n          | <http://localhost:5678>     |
+| Open WebUI   | <http://localhost:3000>     |
+| Flowise      | <http://localhost:3001>     |
+| Langflow     | <http://localhost:7860>     |
+| Qdrant       | <http://localhost:6333>     |
+| Ollama (API) | <http://localhost:11434>    |
 
-## 9) MCP servers (HTTP sidecars)
+### MCP Servers – Internal Docker URLs
 
-The custom image runs each MCP as a **separate container** over **HTTP**.
-
-### Inside Docker (recommended)
-
-If the caller (usually n8n) is **also** in the `demo` network, don’t publish ports — use Docker DNS.  
-These are the actual in-cluster URLs from your `docker-compose.yml`:
+Use these from **n8n MCP HTTP nodes** (same `demo` network):
 
 - Documentation MCP → `http://mcp-documentation:3000`
 - HTTPS Inspection MCP → `http://mcp-https-inspection:3001`
@@ -243,67 +354,75 @@ These are the actual in-cluster URLs from your `docker-compose.yml`:
 - Quantum Gaia MCP → `http://quantum-gaia-mcp:3011`
 - CPInfo Analysis MCP → `http://cpinfo-analysis-mcp:3012`
 
-This is the preferred setup for n8n.
+### MCP Servers – From the Host
 
-### From the host
+If ports are published:
 
-If you publish ports in compose (like you did):
+- Documentation MCP → <http://localhost:7300>
+- HTTPS Inspection MCP → <http://localhost:7301>
+- Quantum Management MCP → <http://localhost:7302>
+- Management Logs MCP → <http://localhost:7303>
+- Threat Emulation MCP → <http://localhost:7304>
+- Threat Prevention MCP → <http://localhost:7305>
+- Spark Management MCP → <http://localhost:7306>
+- Reputation Service MCP → <http://localhost:7307>
+- Harmony SASE MCP → <http://localhost:7308>
+- Quantum GW CLI MCP → <http://localhost:7309>
+- Quantum GW Connection Analysis MCP → <http://localhost:7310>
+- Quantum Gaia MCP → <http://localhost:7311>
+- CPInfo Analysis MCP → <http://localhost:7312>
 
-- `mcp-documentation` → `http://localhost:7300`
-- `mcp-https-inspection` → `http://localhost:7301`
-- `mcp-quantum-management` → `http://localhost:7302`
-- `mcp-management-logs` → `http://localhost:7303`
-- `threat-emulation-mcp` → `http://localhost:7304`
-- `threat-prevention-mcp` → `http://localhost:7305`
-- `spark-management-mcp` → `http://localhost:7306`
-- `reputation-service-mcp` → `http://localhost:7307`
-- `harmony-sase-mcp` → `http://localhost:7308`
-- `quantum-gw-cli-mcp` → `http://localhost:7309`
-- `quantum-gw-connection-analysis-mcp` → `http://localhost:7310`
-- `quantum-gaia-mcp` → `http://localhost:7311`
-- `cpinfo-analysis-mcp` → `http://localhost:7312`
+From another machine, use `http://<docker-host-ip>:73xx`.
 
-Call from another machine with `http://<docker-host-ip>:73xx`.
+### n8n MCP Node Configuration
 
-### n8n tool config (important)
+In n8n’s MCP client nodes (e.g., `mcpClientTool`):
 
-In n8n’s MCP tool nodes:
+- **Connection Type / Mode**: `http`
+- **Base URL**: `http://<mcp-service-name>:<port>` (e.g., `http://threat-emulation-mcp:3004`)
+- **Do NOT** set “Package” or “Command” to `@chkp/...`.
 
-- **Mode/Transport**: **HTTP**
-- **URL**: e.g., `http://mcp-documentation:3000`
-- **Do NOT** set “Package”/“Command” to `@chkp/...`  
-  (otherwise n8n will try to run `npx @chkp/...` in-container and you’ll see
-  `npm warn exec …` / `Cannot find package '@chkp/mcp-utils'`).
+If package fields are set, n8n will try `npx @chkp/...` in the container and you’ll see:
+- `npm warn exec The following package was not found and will be installed`
+- `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@chkp/mcp-utils'`
+
+HTTP mode + sidecars = clean, predictable behavior.
 
 ---
 
-## 10) Ollama models
+## Ollama Models
 
-The model-pull sidecar waits for Ollama and pulls:
+The `ollama-pull-*` sidecar waits for the Ollama API and then pulls the configured models, for example:
 
 - `llama3.1:latest`
 - `nomic-embed-text:latest`
 
-Change models by editing the `ollama-pull-*` service `command:` in `docker-compose.yml`.  
-Large models consume disk space; prune unused models with `ollama rm <model>` inside the container.
+To change which models are pulled, edit the `command:` in the `ollama-pull-*` services inside `docker-compose.yml`.
+
+To inspect or prune models inside the Ollama container:
+
+```bash
+ollama list
+ollama rm <model-name>
+```
 
 ---
 
-## 11) Data & persistence
+## Data & Persistence
 
-Named volumes (safe to back up/restore):
+The stack uses named Docker volumes so you can destroy containers and keep data.
 
-| Volume            | What it stores                         |
-|-------------------|----------------------------------------|
-| `n8n_storage`     | n8n config, installed nodes, DB cache  |
-| `postgres_storage`| Postgres data                           |
-| `ollama_storage`  | Ollama models                           |
-| `qdrant_storage`  | Qdrant collections                      |
-| `open-webui`      | Open WebUI data                         |
-| `flowise`         | Flowise data                            |
-| `langflow`        | Langflow data                           |
+| Volume            | Description                                   |
+|-------------------|-----------------------------------------------|
+| `n8n_storage`     | n8n config, user data, some cached metadata   |
+| `postgres_storage`| PostgreSQL database for n8n                   |
+| `ollama_storage`  | Ollama models and data                        |
+| `qdrant_storage`  | Qdrant collections                            |
+| `open-webui`      | Open WebUI data                               |
+| `flowise`         | Flowise data                                  |
+| `langflow`        | Langflow data                                 |
 
-Back up a volume (example for n8n):
+Example: backup `n8n_storage` to a local tarball:
 
 ```bash
 docker run --rm -v n8n_storage:/data -v "$(pwd)":/backup busybox \
@@ -312,70 +431,95 @@ docker run --rm -v n8n_storage:/data -v "$(pwd)":/backup busybox \
 
 ---
 
-## 12) Common commands
+## Troubleshooting
+
+### A) `n8n-import`: “Mismatching encryption keys”
+
+Make sure **all n8n-related containers** (`n8n`, `n8n-import`, `n8n-provision`) use the **same** `N8N_ENCRYPTION_KEY` value from `.env`.
+
+### B) Provisioner: HTTP 400 “Package already installed”
+
+Normal on re-runs. As long as you see `n8n-nodes-mcp` in **Settings → Community Nodes**, you’re good.
+
+### C) MCP node shows `@chkp/...` install errors
+
+If logs show:
+
+- `npm warn exec The following package was not found and will be installed`
+- `Error [ERR_MODULE_NOT_FOUND]: Cannot find package '@chkp/mcp-utils'`
+
+…then the node is in **package mode**. Switch it to **HTTP** and point at the correct MCP URL, e.g.:
+
+```text
+http://management-logs-mcp:3003
+```
+
+### D) Cannot reach MCP from inside Docker
+
+From the `n8n` container, use the **service name**, not `localhost`:
 
 ```bash
-# status
-docker compose ps
+docker compose exec n8n sh
+# Inside
+curl http://mcp-documentation:3000/
+```
 
-# watch n8n logs
-docker compose logs -f n8n
+If that works, the MCP sidecar is healthy and reachable.
 
-# watch ALL logs (noisy but useful when MCP sidecar fails)
-docker compose logs -f
+### E) Postgres connection issues
 
-# watch a specific MCP service
-docker compose logs -f mcp-documentation
+Check the DB logs:
 
-# rebuild custom image
-docker compose build n8n
+```bash
+docker compose logs postgres | tail -n 50
+```
 
-# up with CPU profile
-docker compose --profile cpu up -d
+Ensure:
 
-# down with the same profile(s)
+- `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` match between `postgres`, `n8n`, and `n8n-import`.
+
+### F) GPU not detected
+
+- Ensure you use the `gpu-nvidia` profile.
+- Verify NVIDIA toolkit:
+
+  ```bash
+  docker run --rm --gpus all nvidia/cuda:12.3.2-base nvidia-smi
+  ```
+
+If this fails, fix GPU drivers / toolkit before using the GPU profile.
+
+---
+
+## Updating & Resetting
+
+### Updating
+
+- **n8n-nodes-mcp** – update via n8n UI (Settings → Community Nodes) or adjust the version in your provisioner / Dockerfile and rebuild.
+- **Check Point MCP CLIs** – adjust versions in `docker/n8n/Dockerfile` and rebuild:
+
+  ```bash
+  docker compose build n8n
+  ```
+
+- **Base Images** – pull and rebuild:
+
+  ```bash
+  docker compose pull
+  docker compose build n8n
+  docker compose --profile cpu up -d
+  ```
+
+(adjust profiles as needed).
+
+### Full Reset (Lab-Style)
+
+If you want a **clean slate** (fresh DB, no workflows, no credentials, no chat history):
+
+```bash
+# WARNING: deletes all volumes for selected profiles
 docker compose --profile cpu down -v
-
-# cleanup stopped containers / networks
-docker system prune -f
+docker compose --profile cpu up -d
 ```
 
-**Note on `down` errors**  
-If you see:
-```
-service "open-webui" depends on undefined service "ollama-pull-llama-cpu"
-```
-run `docker compose --profile cpu down -v` (include the same profile(s) you used for `up`),  
-or set `export COMPOSE_PROFILES=cpu` and run `docker compose down -v`.
-
----
-
-## 13) Troubleshooting
-
-**A) `n8n-import`: “Mismatching encryption keys”**  
-Ensure **both** `n8n` and `n8n-import` use the **same** `N8N_ENCRYPTION_KEY` from `.env`.
-
-**B) Provisioner: 400 “Package already installed”**  
-Expected on reruns; the script is idempotent. Ignore if `n8n-nodes-mcp` is present in **Settings → Community Nodes**.
-
-**C) n8n node tries to install `@chkp/...`**  
-Switch the MCP node to **HTTP** mode and point it at `http://mcp-<service>:<port>`. Clear any “package” fields.
-
-**D) Can’t curl MCP from inside Docker**  
-Use the **service name** on the `demo` network, not `localhost`. Example:
-`curl http://mcp-documentation:3000/` from the `n8n` container.
-
-**E) Postgres connection issues**  
-Confirm the DB env vars match across `n8n`, `n8n-import`, and `postgres`.  
-`docker compose logs postgres | tail -n 50`
-
-**F) GPU not detected**  
-Use the `gpu-nvidia` profile and verify NVIDIA toolkit. `docker run --rm --gpus all nvidia/cuda:12.3.2-base nvidia-smi`.
-
----
-
-## 14) Updating the MCP Servers
-
-- **n8n-nodes-mcp**: upgrade via n8n UI (**Settings → Community Nodes**) or update the provisioner to call the update endpoint.
-- **MCP CLIs**: `docker compose build n8n` to rebuild the custom image with latest `@chkp/*` packages.
-- **Base images**: pull latest and rebuild: `docker compose pull && docker compose build n8n`.
+This re-creates the entire environment from zero, re-runs the provisioner, and re-imports any assets in `./n8n/backup`.

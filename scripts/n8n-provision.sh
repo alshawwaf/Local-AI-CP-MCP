@@ -131,7 +131,7 @@ while :; do
 
   # normal success
   if [ "$PKG_STATUS" = "200" ]; then
-    echo "package installed"
+    echo "Community package installed Successfully!!"
     exit 0
   fi
 

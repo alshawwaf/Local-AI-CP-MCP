@@ -1,0 +1,432 @@
+{
+  "name": "management-logs-mcp-webhook-OpenAI",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "a38b55f0-b13d-4762-a64f-2db00696a83e",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -128,
+        384
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "responseNode"
+        }
+      },
+      "id": "4cb47cf8-64d8-40a2-bf39-06c9450a7a1a",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -784,
+        112
+      ],
+      "webhookId": "35bcabf8-caf6-4033-b66d-4658abbaa057"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "75ebfdef-c8e2-4c3e-b716-1479d0cc2a73",
+              "name": "chatInput",
+              "value": "={{ $json?.chatInput || $json.body.chatInput }}",
+              "type": "string"
+            },
+            {
+              "id": "59b7a20f-0626-4861-93e2-015d430c266e",
+              "name": "sessionId",
+              "value": "={{ $json?.sessionId || $json.body.sessionId}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "aaca716b-158a-43c7-b5b2-42e53cbaec34",
+      "name": "Edit Fields",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -512,
+        176
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "audio",
+        "input": "={{ $json.output }}",
+        "voice": "echo",
+        "options": {
+          "response_format": "mp3",
+          "speed": 1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        336,
+        240
+      ],
+      "id": "f8a5439e-8915-4e4b-a7e2-6e411d4f2547",
+      "name": "Generate audio",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "content": "blade:Anti-Bot OR blade:Anti-Virus OR blade:\"Zero Phishing\" OR blade:\"Threat Emulation\" OR blade:\"Threat Extraction\" NOT type:Control NOT action:Accept NOT severity:Low\n\nuse the filter above to see if there are any threats blocked in the \"last-7-days\"",
+        "height": 144,
+        "width": 384,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        336
+      ],
+      "typeVersion": 1,
+      "id": "ad2c53cf-b8a2-47ce-a950-2212a3505edc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -336,
+        496
+      ],
+      "id": "f4632651-9b8d-4ff9-b9c5-f5f102355d77",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "n8n-pipe",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -784,
+        304
+      ],
+      "id": "b39a40f9-eede-4074-9e45-9f1bfc98f5c8",
+      "name": "Webhook",
+      "webhookId": "365d1a31-e08a-4763-85d6-832151ad5c92"
+    },
+    {
+      "parameters": {
+        "content": "curl -H \"Content-Type: application/json\"      -d '{\"sessionId\":\"test\",\"chatInput\":\"blade:Anti-Bot OR blade:Anti-Virus OR blade:\\\"Zero Phishing\\\" OR blade:\\\"Threat Emulation\\\" OR blade:\\\"Threat Extraction\\\" NOT type:Control NOT action:Accept NOT severity:Low\\n\\nuse the filter above to see if there are any threats blocked in the past week (time-frame is last-7-days)\"}'      http://localhost:5678/webhook-test/n8n-pipe\n",
+        "height": 192,
+        "width": 384,
+        "color": 7
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        544,
+        496
+      ],
+      "typeVersion": 1,
+      "id": "9e85c7e8-6d41-465f-8d26-a06a8d688bd4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [
+        672,
+        160
+      ],
+      "id": "17e62fc9-a32e-431f-a28b-805e3467614b",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -496,
+        496
+      ],
+      "id": "1b88cdf3-dfd4-4012-a96e-f25534895df8",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -656,
+        496
+      ],
+      "id": "91576f59-e12a-4b8d-bb8b-55aadf9a6e1f",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling \"management-logs-MCP-tools-list\". Do not execute yet.\n2. Show the available tool names and the proper parameters.\n3. Use the best available tool in the tool \"management-logs-MCP-tools-execute\" Client.\n4. summarize the results."
+        }
+      },
+      "id": "b8fb44dd-b95b-42b6-a5b8-235366403420",
+      "name": "Check Point Logs AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        176
+      ],
+      "retryOnFail": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "content": "LLMs",
+        "height": 192,
+        "width": 528,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -720,
+        448
+      ],
+      "typeVersion": 1,
+      "id": "63dd6c51-6352-4f16-80f6-3441462acaa7",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 176,
+        "width": 368,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        32,
+        464
+      ],
+      "typeVersion": 1,
+      "id": "13ed3e5d-bda6-4419-aa44-81e3014f49b9",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        96,
+        496
+      ],
+      "id": "7d688e50-70ae-4d81-931e-2ca6dbbcaf7a",
+      "name": "management-logs-MCP-tools-list",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "SrfS1vR7jespmlYV",
+          "name": "CP Log MCP Client Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{ $fromAI('Tool_Name') }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        272,
+        496
+      ],
+      "id": "1929e22f-90d6-41aa-a979-c25f498f537b",
+      "name": "management-logs-MCP-tools-execute",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "SrfS1vR7jespmlYV",
+          "name": "CP Log MCP Client Docker"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate audio": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Point Logs AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Generate audio",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "management-logs-MCP-tools-list": {
+      "ai_tool": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "management-logs-MCP-tools-execute": {
+      "ai_tool": [
+        [
+          {
+            "node": "Check Point Logs AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "aff9932c-3e3d-473f-a237-ef4b05912b87",
+  "meta": {
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec",
+    "templateCredsSetupCompleted": true
+  },
+  "id": "odJcqKXqE5WWPQUF",
+  "tags": []
+}

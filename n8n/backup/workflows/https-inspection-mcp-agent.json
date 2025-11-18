@@ -1,5 +1,5 @@
 {
-  "name": "https-inspection-mcp-OpenAI",
+  "name": "https-inspection-mcp",
   "nodes": [
     {
       "parameters": {},
@@ -318,7 +318,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "2411cd18-ba00-4239-b408-81b3bb355a8e",
+  "versionId": "a9acff05-7e87-4035-94dd-01b8f2ace555",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"

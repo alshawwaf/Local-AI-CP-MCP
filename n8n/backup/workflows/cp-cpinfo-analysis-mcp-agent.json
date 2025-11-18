@@ -1,0 +1,281 @@
+{
+  "name": "cp-cpinfo-analysis-mcp-agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "3396c80c-0a8e-4ca9-8d95-851605f0391b",
+      "name": "Postgres Chat Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.1,
+      "position": [
+        -64,
+        16
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "nNfAshAXNQ81bjc7",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -272,
+        112
+      ],
+      "id": "da8f789d-e081-4639-b96f-9a55ef611fbd",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "6oZqD0UJampaYWCy",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Analyze the file SMS_3_11_2025_11_17.info under /data/cpinfo/",
+        "height": 80,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -864,
+        -160
+      ],
+      "typeVersion": 1,
+      "id": "0f33ccc5-a09b-45be-87a9-8ca3b7103c8f",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4o-mini-2024-07-18",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatAzureOpenAi",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        112
+      ],
+      "id": "89e967a5-aab3-4597-9b91-65ad9c5e9859",
+      "name": "Azure OpenAI Chat Model",
+      "credentials": {
+        "azureOpenAiApi": {
+          "id": "nmUI0INbLO2IrroY",
+          "name": "Azure Open AI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-oss:20b-cloud",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOllama",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        112
+      ],
+      "id": "baeccca2-86d9-4f5d-97ee-dab077f13f45",
+      "name": "Ollama Chat Model",
+      "credentials": {
+        "ollamaApi": {
+          "id": "i8fXatxwj12xOABO",
+          "name": "Ollama account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        176,
+        80
+      ],
+      "id": "8860e798-aae4-4c22-8e56-096efbf0cbc8",
+      "name": "List-CP-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "icfVodDPaIITDiRE",
+          "name": "CP-Cpinfo_alaysis-MCP-Client-Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "connectionType": "http",
+        "operation": "executeTool",
+        "toolName": "={{  $fromAI('Tool_Name')  }}",
+        "toolParameters": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Tool_Parameters', ``, 'json') }}"
+      },
+      "type": "n8n-nodes-mcp.mcpClientTool",
+      "typeVersion": 1,
+      "position": [
+        336,
+        80
+      ],
+      "id": "df30dcc5-8468-4813-99b5-46e95eaf74e2",
+      "name": "Execute-CP-MCP-Tools",
+      "credentials": {
+        "mcpClientHttpApi": {
+          "id": "icfVodDPaIITDiRE",
+          "name": "CP-Cpinfo_alaysis-MCP-Client-Docker"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "LLM Models",
+        "height": 176,
+        "width": 560,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -688,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "f6d24530-4d31-40b0-bad5-fd1b10fb58cc",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "MCP",
+        "height": 176,
+        "width": 352,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        112,
+        64
+      ],
+      "typeVersion": 1,
+      "id": "6f7d96b6-f915-4421-b846-aa4305478056",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "You are a smart AI assistant. Always follow these rules:\n\n1. Start every run by calling tools. Do not execute yet.\n2. Show the available tool names.\n3. Use the best available tool name from step 1 in the tool CP-MCP-Client.\n4. summarize the results you receive from check point after triggering the CP-MCP-Client in the previous step."
+        }
+      },
+      "id": "2b2c307b-b2e3-4044-a3dd-133526d79f3f",
+      "name": "CP CPinfo Analysis AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        -160,
+        -176
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "64ebafc4-0201-41e4-b755-9b31aef8c8e0",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -496,
+        -176
+      ],
+      "webhookId": "f68c312c-1ad1-4d8b-b7c1-a5ced2248f23"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        []
+      ]
+    },
+    "List-CP-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute-CP-MCP-Tools": {
+      "ai_tool": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Azure OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "CP CPinfo Analysis AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "6d55ccff-18df-47da-9adf-c596f2c0ae4f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
+  },
+  "id": "6cd0QLPw5VxNn1d8",
+  "tags": []
+}

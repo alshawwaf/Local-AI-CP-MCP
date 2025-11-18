@@ -181,7 +181,7 @@
     },
     {
       "parameters": {
-        "content": "Create a toplogy schema for all interface configurations, IP routes and VLAN setups on \"GW\".",
+        "content": "show all IP routes on target \"GW\".",
         "height": 96
       },
       "type": "n8n-nodes-base.stickyNote",
@@ -271,13 +271,7 @@
     },
     "OpenAI Chat Model": {
       "ai_languageModel": [
-        [
-          {
-            "node": "Quantum GW CLI AI Agent",
-            "type": "ai_languageModel",
-            "index": 0
-          }
-        ]
+        []
       ]
     },
     "List-CP-MCP-Tools-Client": {
@@ -293,7 +287,13 @@
     },
     "Azure OpenAI Chat Model": {
       "ai_languageModel": [
-        []
+        [
+          {
+            "node": "Quantum GW CLI AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
       ]
     },
     "Execute-CP-MCP-Tools-Client": {
@@ -312,7 +312,7 @@
   "settings": {
     "executionOrder": "v1"
   },
-  "versionId": "7ff901d6-3942-41d2-a474-b2c496f59c99",
+  "versionId": "6d80a233-13a8-4af5-9da4-9ec7a5539ca5",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "f8fb8b7c9f227cabfd3532e55a910625bd5265edfac26d35ea7f1663405904ec"
