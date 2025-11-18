@@ -78,7 +78,7 @@ The goal is a **single lab stack** for building, testing, and demoing AI + Check
 </details>
 
 <details>
-<summary><strong>2. Minimal Happy Path</strong></summary>
+<summary><strong>2. Minimal Path</strong></summary>
 
 1. Create a `.env` file (see [Environment](#%EF%B8%8F-environment-env)).  
 2. Build the custom n8n image:
